@@ -2,3 +2,5 @@ name: DellunaFurniture
 version: ${project.version}
 main: me.lewin.dellunafurniture.Main
 api-version: 1.18
+commands:
+  furniture:
