@@ -1,23 +1,21 @@
 package me.lewin.dellunafurniture;
 
+import net.coreprotect.CoreProtectAPI;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.ItemFrame;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.UUID;
 
 public class PlayerInteractEvent implements Listener {
     @EventHandler
@@ -41,6 +39,7 @@ public class PlayerInteractEvent implements Listener {
             if (item_config.getString("type").equals("block")) {
                 Integer area_count = model_config.getInt("area_count");
                 ArrayList<ArrayList<Integer>> area = (ArrayList<ArrayList<Integer>>) model_config.get("area_" + direction4);
+                CoreProtectAPI api = CoreProtectSet.getCoreProtect();
 
                 // 설치 가능여부 감지
                 for (int i = 0; i < area_count; i++) {
@@ -51,27 +50,51 @@ public class PlayerInteractEvent implements Listener {
                     }
                 }
 
-                // 방벽 설치
-                for (int i = 0; i < area_count; i++) {
-                    Block block = startLoc.getWorld().getBlockAt(startLoc.clone().add(area.get(i).get(0), area.get(i).get(1), area.get(i).get(2)));
-                    block.setMetadata("furniture", new FixedMetadataValue(JavaPlugin.getPlugin(Main.class), area.get(i)));
-                    block.setMetadata("model", new FixedMetadataValue(JavaPlugin.getPlugin(Main.class), item_config.getString("model")));
-                    block.setMetadata("direction", new FixedMetadataValue(JavaPlugin.getPlugin(Main.class), direction4));
-                    block.setType(Material.BARRIER);
-                }
-
                 // 갑옷 거치대 설치
                 Location armorLoc = startLoc.clone();
                 if (item_config.getBoolean("rotation")) armorLoc.setYaw(yaw8);
                 else armorLoc.setYaw(yaw4);
                 armorLoc.setPitch(0);
-                ArmorStand armorStand = startLoc.getWorld().spawn(armorLoc, ArmorStand.class);
-                armorStand.setInvisible(true);
-                armorStand.setGravity(false);
-                armorStand.setSilent(true);
-                armorStand.setInvulnerable(true);
-                armorStand.setHelmet(event.getPlayer().getItemInHand());
-                armorStand.setMetadata("furniture", new FixedMetadataValue(JavaPlugin.getPlugin(Main.class), true));
+
+                ArmorStand armorStand = startLoc.getWorld().spawn(armorLoc, ArmorStand.class, a -> {
+                    try { a.setInvisible(true); } catch(Exception err) { }
+                    try { a.setGravity(false); } catch(Exception err) { }
+                    try { a.setSilent(true); } catch(Exception err) { }
+                    try { a.setBasePlate(false); } catch(Exception err) { }
+                    try { a.setInvulnerable(true); } catch(Exception err) { }
+                    try { a.setMarker(true); } catch(Exception err) { }
+                    try { a.setHelmet(event.getPlayer().getItemInHand()); } catch(Exception err) { }
+                    try { a.addEquipmentLock(EquipmentSlot.HEAD, ArmorStand.LockType.REMOVING_OR_CHANGING); } catch(Exception err) { }
+                    try { a.addEquipmentLock(EquipmentSlot.CHEST, ArmorStand.LockType.ADDING); } catch(Exception err) { }
+                    try { a.addEquipmentLock(EquipmentSlot.FEET, ArmorStand.LockType.ADDING); } catch(Exception err) { }
+                    try { a.addEquipmentLock(EquipmentSlot.LEGS, ArmorStand.LockType.ADDING); } catch(Exception err) { }
+                    try { a.addEquipmentLock(EquipmentSlot.HAND, ArmorStand.LockType.ADDING); } catch(Exception err) { }
+                    try { a.addEquipmentLock(EquipmentSlot.OFF_HAND, ArmorStand.LockType.ADDING); } catch(Exception err) { }
+                });
+
+                String entityId = armorStand.getUniqueId().toString();
+
+                // 방벽 설치
+                for (int i = 0; i < area_count; i++) {
+                    Block block = startLoc.getWorld().getBlockAt(startLoc.clone().add(area.get(i).get(0), area.get(i).get(1), area.get(i).get(2)));
+                    block.setType(Material.BARRIER);
+
+                    api.logPlacement(player.getDisplayName(), block.getLocation(), block.getType(), block.getBlockData());
+
+                    Integer x = ((Double)block.getLocation().getX()).intValue();
+                    Integer y = ((Double)block.getLocation().getY()).intValue();
+                    Integer z = ((Double)block.getLocation().getZ()).intValue();
+
+                    String name = x + ";" + y + ";" + z;
+
+                    YamlConfiguration block_config = DataBase.getLocationConfig(x, y, z);
+                    block_config.set(name + ".model", item_config.getString("model"));
+                    block_config.set(name + ".direction4", direction4);
+                    block_config.set(name + ".direction8", direction8);
+                    block_config.set(name + ".startLoc", startLoc);
+                    block_config.set(name + ".id", entityId);
+                    DataBase.saveConfig(block_config, DataBase.getLocationFile(x, y, z));
+                }
 
                 // 아이템 제거
                 event.getPlayer().setItemInHand(null);
@@ -111,9 +134,6 @@ public class PlayerInteractEvent implements Listener {
                         itemFrame.setItem(item);
                         event.getPlayer().setItemInHand(null);
                     }
-                    itemFrame.setMetadata("furniture", new FixedMetadataValue(JavaPlugin.getPlugin(Main.class), area));
-                    itemFrame.setMetadata("model", new FixedMetadataValue(JavaPlugin.getPlugin(Main.class), item_config.getString("model")));
-                    itemFrame.setMetadata("direction", new FixedMetadataValue(JavaPlugin.getPlugin(Main.class), direction4));
                 }
 
                 return;
@@ -121,70 +141,105 @@ public class PlayerInteractEvent implements Listener {
 
         }
 
-        // 가구 아이템을 클릭한 경우
-        if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK) && event.getClickedBlock().hasMetadata("furniture")) {
-
-            // 손에 가구 아이템을 들고 있는 경우
-            if (event.hasItem() && isFurniture(event.getItem())) {
-                return;
-            }
-
+        // 가구 아이템을 우클릭한 경우
+        if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK) && isFurnitureLocation(event.getClickedBlock().getLocation())) {
             // 쉬프트를 누르고 있는 경우
             if (event.getPlayer().isSneaking()) {
                 return;
             }
 
             Block block = event.getClickedBlock();
-            ArrayList<Integer> area = (ArrayList<Integer>) block.getMetadata("furniture").get(0).value();
-            Location startLoc = block.getLocation().add(0.5-area.get(0), 0-area.get(1), 0.5-area.get(2));
-            Location clickLoc = event.getClickedBlock().getLocation().add(0.5, 0, 0.5);
+
+            ItemStack furniture = ((ArmorStand) Bukkit.getEntity(UUID.fromString((String) DataBase.getLocConfig(block.getLocation(), "id")))).getHelmet();
+            String direction = (String) DataBase.getLocConfig(block.getLocation(), "direction8");
+            String uuid = (String) DataBase.getLocConfig(block.getLocation(), "id");
+            YamlConfiguration item_config = DataBase.getItemConfig(furniture.getItemMeta().getDisplayName());
             Player player = event.getPlayer();
 
-            Collection<Entity> nearbyEntities = block.getWorld().getNearbyEntities(startLoc, 0.49, 0.49, 0.49);
-            for (Entity e : nearbyEntities) {
-                if (e instanceof ArmorStand && e.hasMetadata("furniture")) {
-                    ItemStack item = ((ArmorStand) e).getHelmet();
-                    YamlConfiguration item_config = DataBase.getItemConfig(item.getItemMeta().getDisplayName());
-                    switch (item_config.getString("func")) {
-                        case "chair":
-                            ArmorStand seatArmor = player.getWorld().spawn(clickLoc, ArmorStand.class, b -> {
-                                try { b.setInvisible(true); } catch(Exception err) { }
-                                try { b.setSmall(true); } catch(Exception err) { }
-                                try { b.setGravity(false); } catch(Exception err) { }
-                                try { b.setMarker(true); } catch(Exception err) { }
-                                try { b.setBasePlate(false); } catch(Exception err) { }
-                                try { b.setInvulnerable(true); } catch(Exception err) { }
-                            });
-                            seatArmor.addPassenger(player);
-                            return;
+            // 손에 가구 아이템을 들고 있는 경우
+            if (item_config.getString("func").equals("null")) {
+                return;
+            }
+
+            event.setCancelled(true);
+            switch (item_config.getString("func")) {
+                case "chair_blocked":
+                    Location clickLoc_chair = event.getClickedBlock().getLocation().add(0.5, 0 + item_config.getDouble("OffsetY"), 0.5);
+                    clickLoc_chair.setPitch(0);
+                    if (item_config.getBoolean("rotation")) {
+                        clickLoc_chair.setYaw(getYawBy8(getOppositeDirBy8(direction)));
                     }
-                }
+                    else {
+                        clickLoc_chair.setYaw(getYawBy4(getOppositeDirBy4(direction)));
+                    }
+
+                    ArmorStand seatArmor = player.getWorld().spawn(clickLoc_chair, ArmorStand.class, b -> {
+                        try { b.setInvisible(true); } catch(Exception err) { }
+                        try { b.setSmall(true); } catch(Exception err) { }
+                        try { b.setGravity(false); } catch(Exception err) { }
+                        try { b.setMarker(true); } catch(Exception err) { }
+                        try { b.setBasePlate(false); } catch(Exception err) { }
+                        try { b.setInvulnerable(true); } catch(Exception err) { }
+                    });
+                    seatArmor.addPassenger(player);
+                    Chair.chairlist.put(player, seatArmor.getUniqueId().toString());
+
+                    return;
+                case "chair":
+
+                    break;
+                case "chest":
+                    if (!Chest.clickMap.containsKey(player)) {
+                        Chest.getInventory(player, uuid);
+                        Chest.clickMap.put(player, true);
+                    }
+                    break;
+                case "trash":
+                    player.openInventory(Bukkit.createInventory(null, 27, "쓰레기통"));
+                    break;
             }
         }
 
-        if (event.getAction() == Action.LEFT_CLICK_BLOCK && event.getClickedBlock().hasMetadata("furniture")) {
+        // 가구 아이템을 좌클릭한 경우
+        if (event.getAction() == Action.LEFT_CLICK_BLOCK && isFurnitureLocation(event.getClickedBlock().getLocation())) {
             event.setCancelled(true);
-            Block block = event.getClickedBlock();
+            Location clickLoc = event.getClickedBlock().getLocation();
+            Location startLoc = (Location) DataBase.getLocConfig(clickLoc, "startLoc");
+            String model = (String) DataBase.getLocConfig(clickLoc, "model");
+            String direction = (String) DataBase.getLocConfig(clickLoc, "direction4");
+            String id = (String) DataBase.getLocConfig(clickLoc, "id");
+            ArmorStand entity = (ArmorStand) Bukkit.getEntity(UUID.fromString(id));
 
-            ArrayList<Integer> area = (ArrayList<Integer>) block.getMetadata("furniture").get(0).value();
-            String model = (String) block.getMetadata("model").get(0).value();
-            String direction = (String) block.getMetadata("direction").get(0).value();
-
-            Location startLoc = block.getLocation().add(0.5-area.get(0), 0-area.get(1), 0.5-area.get(2));
-
-            Collection<Entity> nearbyEntities = block.getWorld().getNearbyEntities(startLoc, 0.49, 0.49, 0.49);
-            for (Entity e : nearbyEntities) {
-                if (e instanceof ArmorStand && e.hasMetadata("furniture")) {
-                    event.getPlayer().getWorld().dropItem(startLoc, ((ArmorStand) e).getHelmet());
-                    e.remove();
+            if (DataBase.getChestNames().contains(id) && DataBase.getChestConfig(id).get("contents") != null) {
+                for (ItemStack i : (ArrayList<ItemStack>) DataBase.getChestConfig(id).get("contents")) {
+                    if (i != null)
+                        clickLoc.getWorld().dropItem(clickLoc, i);
                 }
             }
 
+            event.getPlayer().getWorld().dropItem(startLoc, entity.getHelmet());
+            entity.remove();
+
             YamlConfiguration model_config = DataBase.getModelConfig(model);
             ArrayList<ArrayList<Integer>> Area = (ArrayList<ArrayList<Integer>>) model_config.get("area_" + direction);
+            CoreProtectAPI api = CoreProtectSet.getCoreProtect();
+
             for (int i = 0; i < model_config.getInt("area_count"); i++) {
-                Block b = startLoc.getWorld().getBlockAt(startLoc.clone().add(Area.get(i).get(0), Area.get(i).get(1), Area.get(i).get(2)));
+                Location l = startLoc.clone().add(Area.get(i).get(0), Area.get(i).get(1), Area.get(i).get(2));
+                Block b = startLoc.getWorld().getBlockAt(l);
+                api.logRemoval(event.getPlayer().getDisplayName(), b.getLocation(), b.getType(), b.getBlockData());
                 b.breakNaturally();
+
+
+                String name = ((Double)l.getX()).intValue() + ";" + ((Double)l.getY()).intValue() + ";" + ((Double)(l.getZ()-1)).intValue();
+
+                YamlConfiguration LocationConfig = DataBase.getLocationConfig(l.getX(), l.getY(), l.getZ());
+                LocationConfig.set(name + ".model", null);
+                LocationConfig.set(name + ".direction", null);
+                LocationConfig.set(name + ".startLoc", null);
+                LocationConfig.set(name + ".id", null);
+                LocationConfig.set(name, null);
+                DataBase.saveConfig(LocationConfig, DataBase.getLocationFile(l.getX(), l.getY(), l.getZ()));
             }
         }
     }
@@ -198,6 +253,16 @@ public class PlayerInteractEvent implements Listener {
             }
         }
         return false;
+    }
+    private Boolean isFurnitureLocation(Location location) {
+        Integer x = ((Double)location.getX()).intValue();
+        Integer y = ((Double)location.getY()).intValue();
+        Integer z = ((Double)location.getZ()).intValue();
+
+        String name = x + ";" + y + ";" + z;
+
+        YamlConfiguration block_config = DataBase.getLocationConfig(x, y, z);
+        return block_config.contains(name);
     }
 
     private String getDirBy8(Location location) {
@@ -240,5 +305,24 @@ public class PlayerInteractEvent implements Listener {
         if (direction.equals("west")) return 90;
         if (direction.equals("northwest")) return 135;
         return 0;
+    }
+
+    private String getOppositeDirBy4(String direction) {
+        if (direction.equals("south")) return "north";
+        if (direction.equals("west")) return "east";
+        if (direction.equals("north")) return "south";
+        if (direction.equals("east")) return "west";
+        return "error";
+    }
+    private String getOppositeDirBy8(String direction) {
+        if (direction.equals("north")) return "south";
+        if (direction.equals("northeast")) return "southwest";
+        if (direction.equals("east")) return "west";
+        if (direction.equals("southeast")) return "northwest";
+        if (direction.equals("south")) return "north";
+        if (direction.equals("southwest")) return "northeast";
+        if (direction.equals("west")) return "east";
+        if (direction.equals("northwest")) return "southeast";
+        return "error";
     }
 }
