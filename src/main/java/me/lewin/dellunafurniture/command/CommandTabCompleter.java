@@ -1,5 +1,7 @@
-package me.lewin.dellunafurniture;
+package me.lewin.dellunafurniture.command;
 
+import me.lewin.dellunafurniture.DataBase;
+import me.lewin.dellunafurniture.Reference;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 
@@ -10,46 +12,46 @@ import java.util.List;
 public class CommandTabCompleter implements TabCompleter {
     List<String> empty = new ArrayList<String>() {{ add(""); }};
 
-    String[] en_commands = { "item", "model" };
+    String[] en_commands = { "item", "model", "dye", "version" };
 
     @Override
     public List<String> onTabComplete(CommandSender sender, org.bukkit.command.Command command, String alias, String[] args) {
         if (!sender.isOp()) return empty;
+
         if (args.length > 0) {
-            switch (args[0]) {
-                case "model":
+            if (args[0].equals("dye")) {
+                if (args.length == 2) {
+                    ArrayList<String> list = new ArrayList<>();
+                    list.add("<RED>");
+                    return tabCompleteSort(list, args[1]);
+                }
+                else if (args.length == 3) {
+                    ArrayList<String> list = new ArrayList<>();
+                    list.add("<GREEN>");
+                    return tabCompleteSort(list, args[2]);
+                }
+                else if (args.length == 4) {
+                    ArrayList<String> list = new ArrayList<>();
+                    list.add("<BLUE>");
+                    return tabCompleteSort(list, args[3]);
+                }
+                else
                     return empty;
-                case "dye":
-                    if (args.length == 2) {
-                        ArrayList<String> list = new ArrayList<>();
-                        list.add("<RED>");
-                        return tabCompleteSort(list, args[1]);
-                    }
-                    else if (args.length == 3) {
-                        ArrayList<String> list = new ArrayList<>();
-                        list.add("<GREEN>");
-                        return tabCompleteSort(list, args[2]);
-                    }
-                    else if (args.length == 4) {
-                        ArrayList<String> list = new ArrayList<>();
-                        list.add("<BLUE>");
-                        return tabCompleteSort(list, args[3]);
-                    }
-                    else
-                        return empty;
-                case "item":
-                    if (args.length == 2) {
-                        ArrayList<String> list = new ArrayList<>();
-                        list.add("add");
-                        list.add("remove");
-                        return tabCompleteSort(list, args[1]);
-                    }
-                    else if (args.length == 3) {
+            }
+
+            else if (args[0].equals("item")) {
+                if (args.length == 2) {
+                    ArrayList<String> list = new ArrayList<>();
+                    list.add("add");
+                    list.add("remove");
+                    return tabCompleteSort(list, args[1]);
+                }
+
+                if (args.length > 1 && args[1].equals("add")) {
+                    if (args.length == 3) {
                         ArrayList<String> list = new ArrayList<>();
                         list.add("block");
-                        list.add("wall");
-                        list.add("ceiling");
-                        list.add("floor");
+                        list.add("wall_frame");
                         return tabCompleteSort(list, args[2]);
                     }
                     else if (args.length == 4) {
@@ -71,7 +73,7 @@ public class CommandTabCompleter implements TabCompleter {
                         return tabCompleteSort(list, args[4]);
                     }
                     else if (args.length == 6) {
-                        ArrayList<String> list = DataBase.getModelNames();
+                        ArrayList<String> list = Reference.getModelNames();
                         return tabCompleteSort(list, args[5]);
                     }
                     else if (args.length == 7) {
@@ -81,14 +83,24 @@ public class CommandTabCompleter implements TabCompleter {
                     }
                     else
                         return empty;
+                }
 
-                default:
-                    List<String> list_en = new ArrayList<>(Arrays.asList(en_commands));
-                    return tabCompleteSort(list_en, args[0]);
+                else if (args.length > 1 && args[1].equals("remove")) {
+                    if (args.length == 3) {
+                        ArrayList<String> list = Reference.getItemNames();
+                        return tabCompleteSort(list, args[2]);
+                    }
+                    else
+                        return empty;
+                }
             }
-        } else {
-            return empty;
+
+            else {
+                List<String> list_en = new ArrayList<>(Arrays.asList(en_commands));
+                return tabCompleteSort(list_en, args[0]);
+            }
         }
+        return empty;
     }
 
     private List<String> tabCompleteSort(List<String> list, String args) {
