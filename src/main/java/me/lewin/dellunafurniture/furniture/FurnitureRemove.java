@@ -90,38 +90,6 @@ public class FurnitureRemove implements Listener {
     }
 
     @EventHandler
-    private void onInteract(EntityDamageByEntityEvent event) {
-        if (Reference.isFurnitureEntity(event.getEntity().getUniqueId().toString())) {
-            event.setCancelled(true);
-
-            YamlConfiguration config = DataBase.getFrameConfig(event.getEntity().getUniqueId().toString());
-            String type = config.getString("type");
-            Boolean light = config.getBoolean("func_bool");
-            if (type.equals("wall_frame")) {
-                ItemFrame e = (ItemFrame) event.getEntity();
-                ItemStack i = e.getItem();
-
-                Location location = e.getLocation();
-                location.getWorld().dropItem(location, i);
-
-                String uuid = e.getUniqueId().toString();
-
-                DataBase.removeFile("entity", uuid);
-
-                CoreProtectAPI api = CoreProtectSet.getCoreProtect();
-                api.logRemoval(((Player)event.getDamager()).getDisplayName(), e.getLocation(), Material.ITEM_FRAME, null);
-
-                e.setItem(null);
-                e.remove();
-
-                if (light) {
-                    e.getLocation().getBlock().setType(Material.AIR);
-                }
-            }
-        }
-    }
-
-    @EventHandler
     private void onBreak(HangingBreakEvent event) {
         if (Reference.isFurnitureEntity(event.getEntity().getUniqueId().toString())) {
             event.setCancelled(true);

@@ -25,8 +25,11 @@ public class FurniturePlace implements Listener {
     private void onInteract(org.bukkit.event.player.PlayerInteractEvent event) {
 
         if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK) && event.hasItem() && Reference.isFurniture(event.getItem())) {
+
             ItemStack item = event.getItem();
             Player player = event.getPlayer();
+
+            if (!item.equals(player.getItemInHand())) return;
 
             Location player_loc = player.getLocation();
             Location start_loc = event.getClickedBlock().getRelative(event.getBlockFace()).getLocation().add(0.5, 0.5, 0.5);

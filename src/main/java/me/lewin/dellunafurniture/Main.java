@@ -2,7 +2,6 @@ package me.lewin.dellunafurniture;
 
 import me.lewin.dellunafurniture.command.Command;
 import me.lewin.dellunafurniture.command.CommandTabCompleter;
-import me.lewin.dellunafurniture.func.Bed;
 import me.lewin.dellunafurniture.func.Chair;
 import me.lewin.dellunafurniture.func.Chest;
 import me.lewin.dellunafurniture.furniture.FurnitureInteract;
@@ -28,7 +27,6 @@ public final class Main extends JavaPlugin {
 
         Bukkit.getPluginManager().registerEvents(new Chest(), this);
         Bukkit.getPluginManager().registerEvents(new Chair(), this);
-        Bukkit.getPluginManager().registerEvents(new Bed(), this);
         Bukkit.getPluginManager().registerEvents(new FurniturePlace(), this);
         Bukkit.getPluginManager().registerEvents(new FurnitureRemove(), this);
         Bukkit.getPluginManager().registerEvents(new FurnitureInteract(), this);

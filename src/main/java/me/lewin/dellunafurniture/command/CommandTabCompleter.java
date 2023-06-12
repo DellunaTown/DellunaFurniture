@@ -12,7 +12,7 @@ import java.util.List;
 public class CommandTabCompleter implements TabCompleter {
     List<String> empty = new ArrayList<String>() {{ add(""); }};
 
-    String[] en_commands = { "item", "model", "dye", "version" };
+    String[] en_commands = { "item", "dye", "version" };
 
     @Override
     public List<String> onTabComplete(CommandSender sender, org.bukkit.command.Command command, String alias, String[] args) {
@@ -66,10 +66,8 @@ public class CommandTabCompleter implements TabCompleter {
                         list.add("chair");
                         list.add("chest");
                         list.add("trash");
-                        list.add("bed");
                         list.add("light");
                         list.add("null");
-                        list.add("furnace");
                         return tabCompleteSort(list, args[4]);
                     }
                     else if (args.length == 6) {

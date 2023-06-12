@@ -2,7 +2,6 @@ package me.lewin.dellunafurniture.furniture;
 
 import me.lewin.dellunafurniture.DataBase;
 import me.lewin.dellunafurniture.Reference;
-import me.lewin.dellunafurniture.func.Bed;
 import me.lewin.dellunafurniture.func.Chair;
 import me.lewin.dellunafurniture.func.Chest;
 import org.bukkit.Bukkit;
@@ -25,6 +24,7 @@ public class FurnitureInteract implements Listener {
         if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK) && Reference.isFurnitureLocation(event.getClickedBlock().getLocation().add(0.5, 0.5, 0.5))) {
 
             if (event.getPlayer().isSneaking()) return;
+
             event.setCancelled(true);
 
             Player player = event.getPlayer();
@@ -52,12 +52,6 @@ public class FurnitureInteract implements Listener {
             }
             else if (func.equals("trash")) {
                 player.openInventory(Bukkit.createInventory(null, 27, "쓰레기통"));
-            }
-            else if (func.equals("bed")) {
-                //Bed.onInteract(click_loc, offsetY, rotation, direction4, direction8, player);
-            }
-            else if (func.equals("chair_4in1")) {
-                //Bed.onInteract(click_loc, offsetY, rotation, direction4, direction8, player);
             }
         }
     }
